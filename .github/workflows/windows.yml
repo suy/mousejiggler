@@ -1,0 +1,141 @@
+# Windows release pipeline: build with qmake + MSVC, deploy the Qt runtime
+# with windeployqt, package an Inno Setup installer plus a portable archive,
+# and attach both to a GitHub release when a v* tag is pushed.
+#
+# Publishing steps that come later (kept out on purpose until the installer
+# has been tested for a while and the repository is public): a winget-pkgs
+# manifest, and code signing via the SignPath Foundation.
+
+name: Windows
+
+on:
+  push:
+    branches: [prototype, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  # Qt 6.8 LTS. 6.8.3 is the newest 6.8.x with public prebuilt binaries:
+  # from 6.8.4 on, the 6.8 LTS patches are commercial-only (verified
+  # against download.qt.io's online repository).
+  QT_VERSION: 6.8.3
+  QT_ARCH: win64_msvc2022_64
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Read version from mousejiggler.pro
+        id: version
+        shell: pwsh
+        run: |
+          $line = Select-String -Path mousejiggler.pro -Pattern '^VERSION\s*=\s*(\S+)'
+          "version=$($line.Matches[0].Groups[1].Value)" >> $env:GITHUB_OUTPUT
+
+      - name: Build (qmake + nmake)
+        shell: pwsh
+        # `qmake` on Windows defaults to debug_and_release, which builds the
+        # release tree in `release`. That directory is what the packaging steps
+        # below expect (exe + deployed runtime, nothing else). `nmake release`
+        # builds only that tree. Plain `nmake` would also build the debug tree.
+        run: |
+          mkdir build
+          cd build
+          qmake ..\mousejiggler.pro
+          nmake release
+
+      - name: Build and run tests
+        shell: pwsh
+        # Runs before windeployqt on purpose: the test spawns the real
+        # application, which resolves the Qt runtime from PATH (installed by
+        # install-qt-action), so no deployed DLLs are needed and a failure never
+        # reaches the packaging steps.
+        run: |
+          mkdir build\tests
+          cd build\tests
+          qmake ..\..\tests\auto\test_single_instance.pro
+          nmake check
+
+      - name: Deploy Qt runtime (windeployqt)
+        shell: pwsh
+        # Call `windeployqt` skipping what we don't use.
+        # * By skipping `generic` we skip TUIO touch support, which drags Qt
+        #   Network as a dependency.
+        # * Image formats/engines are unnecessary as we only need PNG (which is
+        #   compiled into Qt Gui, without plugin), and those extra plugins are
+        #   SVG, GIF, ICO and JPEG.
+        # * We don't use anything from RHI, directly or indirectly, so skip
+        #   software OpenGL and D3D shader compiler.
+        run: >
+          windeployqt
+          --release
+          --no-translations
+          --no-opengl-sw
+          --no-system-d3d-compiler
+          --skip-plugin-types generic,imageformats,iconengines
+          build\release\mousejiggler.exe
+
+      - name: Copy MSVC runtime libraries
+        shell: pwsh
+        # windeployqt --compiler-runtime is unreliable on CI. Copy the
+        # redistributable DLLs explicitly. VCToolsRedistDir is exported by
+        # msvc-dev-cmd and points into `VC\Redist\MSVC\<version>` of the toolset
+        # (no hardcoded VS path: VS 2022 is a 64-bit install under Program
+        # Files, and image layouts change).
+        run: |
+          Copy-Item "$env:VCToolsRedistDir\x64\Microsoft.VC143.CRT\*.dll" build\release\
+
+      - name: List deployed files
+        shell: pwsh
+        run: Get-ChildItem -Recurse build\release | Select-Object -ExpandProperty FullName
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: ISCC /DMyAppVersion=${{ steps.version.outputs.version }} src\mousejiggler.iss
+
+      - name: Package portable archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build\portable | Out-Null
+          Compress-Archive -Path build\release\* -DestinationPath "build\portable\MouseJiggler-${{ steps.version.outputs.version }}-x64-portable.zip"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            build/dist/*.exe
+            build/portable/*.zip
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+      - name: Attach artifacts to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

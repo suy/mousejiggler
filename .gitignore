@@ -1,0 +1,13 @@
+# qmake / Make build artifacts
+/build/
+Makefile
+Makefile.*
+*.o
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+*.pro.user
+*.qm
+
+# Side effect of lupdate evaluating the .pro from the repository root
+.qmake.stash
