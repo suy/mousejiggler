@@ -134,8 +134,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: windows
-          path: dist
+          path: artifact
       - name: Attach artifacts to the release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: artifact/**
+          fail_on_unmatched_files: true

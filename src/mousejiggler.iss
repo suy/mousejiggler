@@ -2,7 +2,7 @@
 ;
 ; CI passes the version parsed out of mousejiggler.pro:
 ;
-;     ISCC /DMyAppVersion=0.1.0 src\mousejiggler.iss
+;     ISCC /DMyAppVersion=1.0.0 src\mousejiggler.iss
 ;
 ; Running it by hand from the repository root works too; the fallback version
 ; gets a -dev suffix so a local build cannot be confused with a released one.
