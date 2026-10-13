@@ -78,13 +78,18 @@ jobs:
         #   compiled into Qt Gui, without plugin), and those extra plugins are
         #   SVG, GIF, ICO and JPEG.
         # * We don't use anything from RHI, directly or indirectly, so skip
-        #   software OpenGL and D3D shader compiler.
+        #   software OpenGL, D3D shader compiler, and the DXC shader compiler
+        #   (dxcompiler.dll and dxil.dll).
+        # * The compiler runtime DLLs are copied explicitly in the next step;
+        #   the default behavior would also drop vc_redist.x64.exe here.
         run: >
           windeployqt
           --release
           --no-translations
           --no-opengl-sw
           --no-system-d3d-compiler
+          --no-system-dxc-compiler
+          --no-compiler-runtime
           --skip-plugin-types generic,imageformats,iconengines
           build\release\mousejiggler.exe
 
@@ -112,9 +117,18 @@ jobs:
 
       - name: Package portable archive
         shell: pwsh
+        # build\release doubles as qmake's compilation tree, so it holds build
+        # by-products (object files, generated moc_/qrc_ sources, loose .qm)
+        # next to the deployed runtime. Stage just the runtime files and
+        # compress that, instead of zipping build\release\* wholesale.
         run: |
           New-Item -ItemType Directory -Force build\portable | Out-Null
-          Compress-Archive -Path build\release\* -DestinationPath "build\portable\MouseJiggler-${{ steps.version.outputs.version }}-x64-portable.zip"
+          $staging = "build\portable\staging"
+          New-Item -ItemType Directory -Force $staging | Out-Null
+          Copy-Item build\release\mousejiggler.exe, build\release\*.dll $staging
+          Copy-Item build\release\platforms, build\release\styles $staging -Recurse
+          Compress-Archive -Path $staging\* -DestinationPath "build\portable\MouseJiggler-${{ steps.version.outputs.version }}-x64-portable.zip"
+          Remove-Item -Recurse -Force $staging
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
