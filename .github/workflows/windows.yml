@@ -126,6 +126,7 @@ jobs:
           $staging = "build\portable\staging"
           New-Item -ItemType Directory -Force $staging | Out-Null
           Copy-Item build\release\mousejiggler.exe, build\release\*.dll $staging
+          Copy-Item LICENSE $staging
           Copy-Item build\release\platforms, build\release\styles $staging -Recurse
           Compress-Archive -Path $staging\* -DestinationPath "build\portable\MouseJiggler-${{ steps.version.outputs.version }}-x64-portable.zip"
           Remove-Item -Recurse -Force $staging

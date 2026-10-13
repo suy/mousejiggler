@@ -37,7 +37,6 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 SetupIconFile=mousejiggler.ico
-LicenseFile=..\LICENSE
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
@@ -56,6 +55,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; \
 ; Microsoft runtime libraries next to it.
 Source: "{#BuildDir}\*"; DestDir: "{app}"; \
     Flags: ignoreversion recursesubdirs createallsubdirs
+; The GPL asks that a copy of the license travels with the program, so it is
+; installed as a file instead of being shown as a wizard page.
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
