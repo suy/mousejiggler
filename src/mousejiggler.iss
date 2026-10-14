@@ -2,15 +2,15 @@
 ;
 ; CI passes the version parsed out of mousejiggler.pro:
 ;
-;     ISCC /DMyAppVersion=1.0.0 src\mousejiggler.iss
+;     ISCC /DMyAppVersion=<version> src\mousejiggler.iss
 ;
-; Running it by hand from the repository root works too; the fallback version
-; gets a -dev suffix so a local build cannot be confused with a released one.
+; A build without a version is refused, so a hand-run must pass the parameter
+; explicitly; there is no silent fallback version.
 ; Paths are resolved relative to this file, so the working directory
 ; does not matter. The installer is written to build\dist, which is gitignored.
 
 #ifndef MyAppVersion
-#define MyAppVersion "0.1.0-dev"
+#error Pass the version: ISCC /DMyAppVersion=x.y.z src\mousejiggler.iss
 #endif
 
 #define MyAppName "Qt Mouse Jiggler"
