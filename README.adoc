@@ -57,6 +57,10 @@ After installing and starting the app:
 * Dismiss the window to the system tray by closing it, or pressing kbd:[Ctrl+W].
 * Toggle jiggling with the checkbox or kbd:[Ctrl+T].
 * Close the app entirely via the right click menu or kbd:[Ctrl+Q].
+* Raise and focus the window from anywhere with the global shortcut
+  kbd:[Meta+Ctrl+J] (where "Meta" is the Windows key on Windows; mnemonic:
+  "control window jiggler"). Press it again to hide it to the system tray. See
+  below for how to choose a different shortcut it via the command line.
 
 
 
@@ -135,6 +139,14 @@ value in seconds from 1 to the interval specified.
 |`-d`, `--distance <n>`
 |Distance multiplier (1 to 100). This will make the movements larger, instead of
 as small as possible, which is the default (that is, 1 pixel).
+
+|`--shortcut <sequence>`
+|Global shortcut that summons the settings window from anywhere. Pass a text
+with the usual notation, e.g. `Meta+Ctrl+J` (the default), `Ctrl+Shift+Space`,
+`Alt+F9`, etc. An empty value disables the shortcut. The combination must not
+be in use by other applications. If it is taken or invalid, the app continues
+without it. Careful with combinations with Control and Alt if you plan to use
+the AltGr key as well, as Windows sees the latter as the former two at once.
 |===
 
 
