@@ -6,7 +6,7 @@ TARGET = mousejiggler
 
 # Single source for the version: the APP_VERSION define used by the code, the
 # Windows version resource, and the installer that CI builds from this file.
-VERSION = 1.0.1
+VERSION = 1.1.0
 QMAKE_TARGET_COMPANY = Alejandro Exojo
 QMAKE_TARGET_PRODUCT = Qt Mouse Jiggler
 # FileDescription doubles as the process name Windows shows in the tray
