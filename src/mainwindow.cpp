@@ -189,6 +189,21 @@ void MainWindow::setUserActivity(bool active)
     updateNextIntervalLabel();
 }
 
+void MainWindow::onGlobalShortcutActivated()
+{
+    if (isVisible() && isActiveWindow()) {
+        hide();
+    } else {
+        // Windows forbids focus stealing from background processes, but a
+        // process that is currently receiving a registered hotkey holds the
+        // foreground activation right, so the three calls together do bring the
+        // window to the front and give it focus.
+        show();
+        raise();
+        activateWindow();
+    }
+}
+
 void MainWindow::showStartedMessage()
 {
     const QString text = m_jigglingCheckBox->isChecked()

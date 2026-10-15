@@ -46,6 +46,8 @@ public slots:
     // the user was moving the mouse.
     void setUserActivity(bool active);
 
+    void onGlobalShortcutActivated();
+
 protected:
     void closeEvent(QCloseEvent* event) override;
 

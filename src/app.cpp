@@ -5,7 +5,9 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QIcon>
+#include <QKeySequence>
 #include <QLocale>
 #include <QLockFile>
 #include <QMessageBox>
@@ -85,6 +87,10 @@ int main(int argc, char* argv[])
             .arg(constants::MinimumDistanceMultiplier)
             .arg(constants::MaximumDistanceMultiplier),
         QStringLiteral("distance"));
+    QCommandLineOption shortcutOption(QStringLiteral("shortcut"),
+        QCoreApplication::translate("main",
+            "Global shortcut to raise the window (e.g. Meta+Ctrl+J, the default)."),
+        QStringLiteral("shortcut"));
     commandLineParser.addHelpOption();
     commandLineParser.addVersionOption();
     commandLineParser.addOption(jiggleOption);
@@ -95,6 +101,7 @@ int main(int argc, char* argv[])
     commandLineParser.addOption(randomOption);
     commandLineParser.addOption(secondsOption);
     commandLineParser.addOption(distanceOption);
+    commandLineParser.addOption(shortcutOption);
     commandLineParser.process(application);
 
     QLockFile lockFile(QStandardPaths::writableLocation(QStandardPaths::TempLocation)
@@ -123,6 +130,26 @@ int main(int argc, char* argv[])
     // place that knows about both. Values cross the boundary, never calls.
     Jiggler jiggler;
     MainWindow mainWindow;
+
+    platform::GlobalShortcut globalShortcut(&application);
+    QSettings settings;
+    const QString shortcut = commandLineParser.isSet(shortcutOption)
+        ? commandLineParser.value(shortcutOption)
+        : settings.value(QStringLiteral("globalShortcut"),
+            constants::DefaultGlobalShortcut).toString();
+    if (commandLineParser.isSet(shortcutOption))
+        settings.setValue(QStringLiteral("globalShortcut"), shortcut);
+
+    if (shortcut.isEmpty()) {
+        // An explicitly empty value disables the shortcut.
+        qDebug() << "Global shortcut disabled";
+    } else if (!globalShortcut.setShortcut(QKeySequence(shortcut))) {
+        qWarning() << "Global shortcut" << shortcut << "is unavailable"
+                   << "(invalid combination, taken by another application,"
+                   << "or unsupported platform)";
+    }
+    QObject::connect(&globalShortcut, &platform::GlobalShortcut::activated,
+        &mainWindow, &MainWindow::onGlobalShortcutActivated);
 
     // Interface events drive the logic.
     QObject::connect(&mainWindow, &MainWindow::jigglingToggled, &jiggler, &Jiggler::setJiggling);
