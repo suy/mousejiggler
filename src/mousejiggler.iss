@@ -52,9 +52,16 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; \
 
 [Files]
 ; windeployqt output: the executable with the Qt runtime, Qt plugins and the
-; Microsoft runtime libraries next to it.
-Source: "{#BuildDir}\*"; DestDir: "{app}"; \
-    Flags: ignoreversion recursesubdirs createallsubdirs
+; Microsoft runtime libraries next to it. But, `build/release` is also qmake's
+; compilation dir (so generated `moc_*`/`qrc_*` sources end up there too), so
+; the files are hand picked instead of copying the directory wholesale. The
+; portable packaging step in the workflow does the same with a "staging"
+; directory. Wildcards without `recursesubdirs` stay in the build directory, so
+; the root `*.dll` entry covers the Qt and Microsoft runtime libraries only.
+Source: "{#BuildDir}\mousejiggler.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion
+Source: "{#BuildDir}\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion
 ; The GPL asks that a copy of the license travels with the program, so it is
 ; installed as a file instead of being shown as a wizard page.
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
