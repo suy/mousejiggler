@@ -51,3 +51,33 @@ CONFIG += lrelease embed_translations
 lupdate.target = lupdate
 lupdate.commands = $$[QT_INSTALL_BINS]/lupdate $$PWD/mousejiggler.pro
 QMAKE_EXTRA_TARGETS += lupdate
+
+win32 {
+    # Deploy the Qt runtime next to the executable, for manual testing of a
+    # release-like directory (what CI does with its own explicit command).
+    # Paths come from the kit in use ($$[QT_INSTALL_BINS]), so nothing is
+    # hardcoded, and the target works from any build directory.
+    # The executable path is composed by hand instead of using the make-level
+    # $(DESTDIR_TARGET): that variable is only defined in the per-config
+    # makefiles (Makefile.Debug/Makefile.Release), not in the top-level
+    # Makefile where QMAKE_EXTRA_TARGETS rules are emitted, so it would
+    # expand to nothing exactly when the target runs.
+    CONFIG(debug, debug|release) {
+        deployment_config = --debug
+        deployment_dir = debug
+    } else {
+        deployment_config = --release
+        deployment_dir = release
+    }
+    debug_and_release {
+        # The executable lands in the per-config subdirectory.
+        deployment_target = $$clean_path($$OUT_PWD/$$deployment_dir/$${TARGET}.exe)
+    } else {
+        deployment_target = $$clean_path($$OUT_PWD/$$DESTDIR/$${TARGET}.exe)
+    }
+    windeployqt.target = windeployqt
+    windeployqt.depends = first
+    windeployqt.commands = $$shell_quote($$shell_path($$[QT_INSTALL_BINS]/windeployqt.exe)) \
+        $$deployment_config --no-translations $$shell_quote($$shell_path($$deployment_target))
+    QMAKE_EXTRA_TARGETS += windeployqt
+}
