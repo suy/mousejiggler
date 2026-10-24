@@ -61,6 +61,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; \
 Source: "{#BuildDir}\mousejiggler.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion
+Source: "{#BuildDir}\imageformats\*"; DestDir: "{app}\imageformats"; Flags: ignoreversion
 Source: "{#BuildDir}\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion
 ; The GPL asks that a copy of the license travels with the program, so it is
 ; installed as a file instead of being shown as a wizard page.

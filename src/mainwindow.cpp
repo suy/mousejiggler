@@ -88,7 +88,16 @@ void MainWindow::setupUi()
     m_trayMenu->addSeparator();
     m_trayMenu->addAction(tr("Quit"), QCoreApplication::instance(), &QCoreApplication::quit);
 
-    m_trayIcon = new QSystemTrayIcon(QIcon(QStringLiteral(":/mousejiggler.ico")), this);
+    const QString trayIconPath = QStringLiteral(":/mousejiggler.ico");
+    const QIcon trayIcon(trayIconPath);
+    if (trayIcon.isNull()) {
+        // Decoding an .ico goes through the qico imageformat plugin. A missing
+        // plugin (as in installers built before this warning existed) yields an
+        // empty icon, and QSystemTrayIcon then silently never installs itself.
+        qWarning() << "Tray icon is empty; the imageformat plugin for .ico"
+                   << "files is probably missing from the deployment.";
+    }
+    m_trayIcon = new QSystemTrayIcon(trayIcon, this);
     m_trayIcon->setContextMenu(m_trayMenu);
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::trayActivated);
     connect(m_trayIcon, &QSystemTrayIcon::messageClicked, this, &QWidget::showNormal);
